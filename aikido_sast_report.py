@@ -97,6 +97,12 @@ class Aikido:
             
             # Rebuild path from base path + validated user path
             parsed = parsed._replace(path=parsed.path + path)
+            # Protocol + host checks
+            if parsed.scheme not in ("http", "https"):
+                raise ValueError("Invalid protocol")
+            if not parsed.hostname:
+                raise ValueError("Invalid host")
+            
             
             # Add query parameters
             if params:
