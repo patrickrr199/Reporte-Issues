@@ -87,9 +87,28 @@ class Aikido:
             raise SystemExit("No se obtuvo access_token con AIKIDO_CLIENT_ID / AIKIDO_CLIENT_SECRET.")
         return tok
 
+    def _build_validated_url(self, base_url: str, path: str, params=None) -> str:
+        try:
+            # Minimal path validation
+            if "/../" in path or re.search(r"/%2e%2e/", path, re.IGNORECASE):
+                raise ValueError("Invalid path")
+            
+            parsed = urllib.parse.urlparse(base_url)
+            
+            # Rebuild path from base path + validated user path
+            parsed = parsed._replace(path=parsed.path + path)
+            
+            # Add query parameters
+            if params:
+                parsed = parsed._replace(query=urllib.parse.urlencode(params))
+            
+            return urllib.parse.urlunparse(parsed)
+        except Exception:
+            raise ValueError("Invalid URL")
+    
     def get(self, path, params=None):
-        q = "?" + urllib.parse.urlencode(params) if params else ""
-        req = urllib.request.Request(self.api + path + q,
+        url = self._build_validated_url(self.api, path, params)
+        req = urllib.request.Request(url,
                                      headers={"Authorization": f"Bearer {self.token}", "Accept": "application/json"})
         return self._call(req)
 
@@ -165,7 +184,11 @@ def read_source(src_dirs, i, ctx=3):
         path = os.path.join(d, f.lstrip("/\\"))
         if not os.path.isfile(path):
             continue
-        with open(path, encoding="utf-8", errors="replace") as fh:
+        base_real = os.path.realpath(d)
+        target_real = os.path.realpath(path)
+        if os.path.commonpath([base_real, target_real]) != base_real:
+            raise Exception("Invalid file path")
+        with open(target_real, encoding="utf-8", errors="replace") as fh:
             content = fh.read().splitlines()
         s, e = int(s), int(e or s)
         lo, hi = max(1, s - ctx), min(len(content), e + ctx)
@@ -205,35 +228,59 @@ def md(text):
 
 # ------------------------------------------------------------------------ render
 CSS = """
-*{box-sizing:border-box}body{font-family:Arial,Helvetica,sans-serif;color:#111;margin:0;background:#fff;font-size:13px}
-.page{max-width:1000px;margin:0 auto;padding:28px 32px}
-h1{font-size:26px;margin:0 0 4px}h2{font-size:22px;margin:34px 0 8px}
-.meta{color:#555;margin-bottom:16px;line-height:1.5}.meta b{color:#111}
-p.lead{margin:0 0 12px;line-height:1.4;font-size:14px}
+:root{--bg:#f6f6fa;--card:#fff;--line:#e7e7f0;--ink:#16162a;--muted:#6b6b85;--brand:#6551f3;--brand-soft:#efedfe;
+--critical:#d92d20;--high:#f26b1d;--medium:#f2b705;--low:#8a8fa3}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 Inter,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.top{background:#141428;color:#fff}
+.top .in{max-width:1040px;margin:0 auto;padding:22px 24px;display:flex;align-items:center;gap:14px}
+.logo{width:34px;height:34px;border-radius:9px;background:var(--brand);display:grid;place-items:center;font-weight:800;font-size:18px}
+.top .brand{font-weight:700;font-size:15px;opacity:.9}.top .sub{font-size:12px;opacity:.6}
+.page{max-width:1040px;margin:0 auto;padding:24px}
+h1{font-size:24px;margin:0 0 4px;letter-spacing:-.01em}
+.meta{color:var(--muted);font-size:13px;margin-bottom:20px}.meta b{color:var(--ink);font-weight:600}
+h2{font-size:17px;margin:30px 0 12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px}
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.kpi{padding:14px 16px}.kpi .l{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.kpi .v{font-size:28px;font-weight:700;margin-top:2px}.kpi .x{font-size:12px;color:var(--muted)}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+.d-critical{background:var(--critical)}.d-high{background:var(--high)}.d-medium{background:var(--medium)}.d-low{background:var(--low)}
+.lead{color:var(--muted);font-size:13px;margin:-4px 0 12px}
 table{border-collapse:collapse;width:100%}
-.sum th{background:#0a9ad7;color:#fff;font-size:15px;text-align:left;padding:5px 8px}
-.sum th.c{text-align:center}.sum td{padding:4px 8px}
-.sum td.n{text-align:right;width:92px}.sum tr:nth-child(odd) td{background:#ececec}
-.sum tr.tot td{font-weight:bold;border-top:2px solid #0a9ad7;background:#fff}
-.h-critical{background:#e0201b!important;color:#111!important}.h-high{background:#f27a1a!important;color:#111!important}
-.h-medium{background:#f6b26b!important;color:#111!important}.h-low{background:#f1d04f!important;color:#111!important}
-.eng{margin:26px 0 10px}.eng h3{font-size:16px;text-decoration:underline;margin:0 0 6px}
-.eng th{text-align:right;padding:3px 8px}.eng th:first-child{text-align:left}
-.eng td{padding:2px 8px;text-align:right}.eng td:first-child{text-align:left;width:45%}
-.eng tr.tot td{font-weight:bold}.eng table{border-bottom:2px solid #c8d8e0}
-.issue{margin:10px 0 34px;page-break-inside:avoid}
-.bar{display:flex;gap:2px}.bar .t{flex:1;background:#0a9ad7;color:#fff;font-weight:bold;font-size:15px;padding:4px 8px}
-.bar .s{width:170px;text-align:center;font-weight:bold;font-size:15px;padding:4px 8px}
-.pkg{background:#808080;color:#fff;font-weight:bold;padding:4px 8px;margin-top:2px;font-size:14px}
-.loc{background:#c8c8c8;font-weight:bold;padding:4px 8px;margin-top:2px;font-size:14px}
-.sec{background:#d0d0d0;font-weight:bold;padding:4px 8px;margin:12px 0 6px 6px;font-size:14px;width:96%}
-.kv{padding-left:40px;line-height:1.5}
-.code{border:1px solid #ddd;margin:8px 0 0 6px;font-family:Consolas,"Courier New",monospace;font-size:12px}
-.code div{display:flex;white-space:pre-wrap}.code .ln{width:40px;flex:none;background:#eee;font-weight:bold;padding:2px 6px}
-.code .tx{padding:2px 6px;flex:1;background:#f6f6f6}.code .hl .tx{background:#fff3c4}
-.desc{padding-left:40px;line-height:1.45}pre.fix{background:#f5f5f5;border:1px solid #ddd;padding:6px;white-space:pre-wrap}
-code{background:#f0f0f0;padding:0 3px}.muted{color:#777}
-@media print{.page{padding:0;max-width:none}h2.brk{page-break-before:always}}
+.sum{overflow:hidden}.sum th{font-size:12px;font-weight:600;color:var(--muted);text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);background:#fafafd}
+.sum th.c,.sum td.n{text-align:center}.sum td{padding:10px 14px;border-bottom:1px solid var(--line)}
+.sum tr:last-child td{border-bottom:0}.sum tr.tot td{font-weight:700;background:#fafafd}
+.sum td.n{width:96px;color:var(--muted)}.sum td.n.has{color:var(--ink);font-weight:600}
+.sum a{color:inherit;text-decoration:none}.sum a:hover{color:var(--brand)}
+.badge{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:600;white-space:nowrap}
+.b-critical{background:#fde7e5;color:var(--critical)}.b-high{background:#fdeee4;color:#c4520f}
+.b-medium{background:#fdf5d8;color:#9a7300}.b-low{background:#eef0f4;color:#5b6075}
+.chip{display:inline-block;border:1px solid var(--line);border-radius:6px;padding:1px 8px;font-size:12px;color:var(--muted);background:#fff}
+.st-open{color:var(--brand);border-color:#d6d0fd;background:var(--brand-soft)}
+.cat{margin:34px 0 10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.cat h3{margin:0;font-size:16px}
+.issue{margin:0 0 14px;page-break-inside:avoid;overflow:hidden}
+.ih{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.ih .t{font-weight:600;flex:1;min-width:240px}.ih .f{font-family:Consolas,"SFMono-Regular",monospace;font-size:12.5px;color:var(--muted)}
+.ib{display:grid;grid-template-columns:260px 1fr}
+.side{padding:14px 16px;border-right:1px solid var(--line);font-size:13px}
+.side div{display:flex;justify-content:space-between;gap:8px;padding:3px 0}.side span{color:var(--muted)}
+.side b{font-weight:600;text-align:right}
+.main{padding:14px 16px;min-width:0}
+.lbl{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
+.code{border-radius:8px;overflow:hidden;background:#141428;color:#e6e6f0;font:12.5px/1.55 Consolas,"SFMono-Regular",monospace;margin-bottom:14px}
+.code .hd{background:#1f1f38;color:#a9a9c6;padding:6px 12px;font-size:12px}
+.code .r{display:flex;white-space:pre-wrap}.code .ln{width:44px;flex:none;text-align:right;padding:0 10px;color:#6f6f92}
+.code .tx{flex:1;padding-right:12px}.code .hl{background:rgba(242,107,29,.22)}.code .hl .ln{color:#fff;box-shadow:inset 3px 0 0 var(--high)}
+.fix{background:var(--brand-soft);border-radius:8px;padding:10px 12px;font-size:13px}
+.fix pre{background:#fff;border:1px solid var(--line);border-radius:6px;padding:8px;white-space:pre-wrap}
+code{background:#ececf6;border-radius:4px;padding:0 4px;font-size:12.5px}
+.muted{color:var(--muted)}.foot{color:var(--muted);font-size:12px;margin:40px 0 10px;text-align:center}
+@media (max-width:760px){.kpis{grid-template-columns:repeat(2,1fr)}.ib{grid-template-columns:1fr}.side{border-right:0;border-bottom:1px solid var(--line)}
+.sum{overflow-x:auto}.sum table{min-width:620px}}
+@media print{body{background:#fff}.page{padding:0 8px}.cat{page-break-before:auto}}
 """
 
 
@@ -241,99 +288,120 @@ def render(issues, groups, opts, repo_name):
     by_cat = defaultdict(list)
     for i in issues:
         by_cat[category(i)].append(i)
-    cats = sorted(by_cat, key=str.lower)
+
+    def worst(c):
+        return min(SEVERITIES.index(i.get("severity", "low")) for i in by_cat[c])
+
+    cats = sorted(by_cat, key=lambda c: (worst(c), c.lower()))
+    anchor = {c: f"cat-{n}" for n, c in enumerate(cats, 1)}
 
     def cell(lst, sev):
         sel = [i for i in lst if i.get("severity") == sev]
-        return f"{sum(map(is_audited, sel))} / {len(sel)}" if sel else "0"
+        if not sel:
+            return "<td class='n'>–</td>"
+        return f"<td class='n has'>{sum(map(is_audited, sel))} / {len(sel)}</td>"
 
     H = []
     a = H.append
     title = opts.title or f"Reporte SAST — {repo_name}"
     a(f"<!doctype html><html lang='es'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>"
-      f"<title>{esc(title)}</title><style>{CSS}</style></head><body><div class='page'>")
+      f"<title>{esc(title)}</title><style>{CSS}</style></head><body>")
+    a("<div class='top'><div class='in'><div class='logo'>A</div><div><div class='brand'>Aikido Security</div>"
+      "<div class='sub'>Reporte de vulnerabilidades por repositorio</div></div></div></div><div class='page'>")
     a(f"<h1>{esc(title)}</h1>")
-    st = Counter(i.get("status") for i in issues)
-    a(f"<div class='meta'>Repositorio: <b>{esc(repo_name)}</b> (id {esc(opts.repo_id)}) · Motor: <b>Aikido {esc(', '.join(opts.types).upper())}</b> · "
-      f"Generado: <b>{dt.datetime.now():%Y-%m-%d %H:%M}</b><br>Issues: <b>{len(issues)}</b> — "
-      + ", ".join(f"{k}: <b>{v}</b>" for k, v in sorted(st.items())) + "</div>")
+    a(f"<div class='meta'>Repositorio <b>{esc(repo_name)}</b> · ID <b>{esc(opts.repo_id)}</b> · Escáner <b>{esc(', '.join(opts.types).upper())}</b> · "
+      f"Generado <b>{dt.datetime.now():%Y-%m-%d %H:%M}</b></div>")
 
-    # ---- Issue Breakdown by Category (tabla principal)
-    a("<h2>Desglose de issues por categoría Aikido</h2>")
-    a("<p class='lead'>La siguiente tabla resume todos los issues agrupados verticalmente por categoría (regla de Aikido). "
-      "Para cada categoría se muestra el número de issues por severidad Aikido, incluyendo cuántos están auditados "
-      "(cerrados, ignorados o pospuestos en Aikido).</p>")
-    a("<table class='sum'><tr><th rowspan='2'>Categoría</th><th class='c' colspan='4'>Severidad Aikido (auditados/total)</th>"
-      "<th class='c' rowspan='2'>Total<br>Issues</th></tr><tr>")
-    a("".join(f"<th class='c h-{s}'>{SEV_LABEL[s]}</th>" for s in SEVERITIES) + "</tr>")
+    # ---- KPIs
+    st = Counter(i.get("status") for i in issues)
+    a("<div class='kpis'>")
+    a(f"<div class='card kpi'><div class='l'>Total issues</div><div class='v'>{len(issues)}</div>"
+      f"<div class='x'>{st.get('open', 0)} abiertos · {sum(map(is_audited, issues))} gestionados</div></div>")
+    for s in SEVERITIES:
+        sel = [i for i in issues if i.get("severity") == s]
+        a(f"<div class='card kpi'><div class='l'><span class='dot d-{s}'></span>{SEV_LABEL[s]}</div><div class='v'>{len(sel)}</div>"
+          f"<div class='x'>{sum(1 for i in sel if i.get('status') == 'open')} abiertos</div></div>")
+    a("</div>")
+
+    # ---- Tabla por categoría
+    a("<h2>Issues por categoría</h2>")
+    a("<p class='lead'>Cada celda muestra <b>gestionados / total</b> (gestionado = cerrado, ignorado o pospuesto en Aikido).</p>")
+    a("<div class='card sum'><table><tr><th>Categoría</th>"
+      + "".join(f"<th class='c'><span class='badge b-{s}'>{SEV_LABEL[s]}</span></th>" for s in SEVERITIES)
+      + "<th class='c'>Total</th></tr>")
     for c in cats:
         lst = by_cat[c]
-        a(f"<tr><td>{esc(c)}</td>" + "".join(f"<td class='n'>{cell(lst, s)}</td>" for s in SEVERITIES)
-          + f"<td class='n'>{sum(map(is_audited, lst))} / {len(lst)}</td></tr>")
-    a("<tr class='tot'><td>Total</td>" + "".join(f"<td class='n'>{cell(issues, s)}</td>" for s in SEVERITIES)
-      + f"<td class='n'>{sum(map(is_audited, issues))} / {len(issues)}</td></tr></table>")
+        a(f"<tr><td><a href='#{anchor[c]}'>{esc(c)}</a></td>" + "".join(cell(lst, s) for s in SEVERITIES)
+          + f"<td class='n has'>{sum(map(is_audited, lst))} / {len(lst)}</td></tr>")
+    a("<tr class='tot'><td>Total</td>" + "".join(cell(issues, s) for s in SEVERITIES)
+      + f"<td class='n has'>{sum(map(is_audited, issues))} / {len(issues)}</td></tr></table></div>")
 
-    # ---- Detalle por categoría
-    a("<h2 class='brk'>Detalle de issues</h2>")
+    # ---- Detalle
+    a("<h2>Detalle de issues</h2>")
     for c in cats:
         lst = sorted(by_cat[c], key=lambda i: (SEVERITIES.index(i.get("severity", "low")), i.get("affected_file") or "", lines_of(i)[0] or 0))
-        a(f"<div class='eng'><h3>Engine Breakdown</h3><table><tr><th></th>"
-          + "".join(f"<th>{l}</th>" for _, l in ENGINES) + "<th>Total</th></tr>")
-        row = "".join(f"<td>{sum(1 for i in lst if i.get('type') == t)}</td>" for t, _ in ENGINES)
-        a(f"<tr><td>{esc(c)}</td>{row}<td>{len(lst)}</td></tr><tr class='tot'><td>Total</td>{row}<td>{len(lst)}</td></tr></table></div>")
+        engines = Counter(dict(ENGINES).get(i.get("type"), i.get("type")) for i in lst)
+        sev = SEVERITIES[worst(c)]
+        a(f"<div class='cat' id='{anchor[c]}'><span class='badge b-{sev}'><span class='dot d-{sev}'></span>{SEV_LABEL[sev]}</span>"
+          f"<h3>{esc(c)}</h3><span class='chip'>{len(lst)} issue{'s' if len(lst) != 1 else ''}</span>"
+          + "".join(f"<span class='chip'>{esc(k)}: {v}</span>" for k, v in engines.items()) + "</div>")
         for i in lst:
             render_issue(a, i, groups.get(i.get("group_id")) or {}, opts)
-    a("<p class='muted' style='margin-top:40px'>Generado con aikido_sast_report.py a partir de la API pública de Aikido Security.</p>")
+    a("<div class='foot'>Generado con aikido_sast_report.py a partir de la API pública de Aikido Security.</div>")
     a("</div></body></html>")
     return "\n".join(H)
+
+
+STATUS_LABEL = {"open": "Abierto", "closed": "Cerrado", "ignored": "Ignorado", "snoozed": "Pospuesto"}
 
 
 def render_issue(a, i, g, opts):
     sev = i.get("severity", "low")
     f = i.get("affected_file") or ""
     s, e = lines_of(i)
-    rule = category(i)
+    status = i.get("status") or ""
     snippet, func = read_source(opts.src_dir, i)
-    a("<div class='issue'>")
-    a(f"<div class='bar'><div class='t'>{esc(rule)}</div><div class='s h-{sev}'>{SEV_LABEL.get(sev, sev)}</div></div>")
-    a(f"<div class='pkg'>Package: {esc(package_of(f))}</div>")
-    a(f"<div class='loc'>{esc(i.get('code_repo_name'))}/{esc(f)}{', line ' + str(s) if s else ''} ({esc(rule)})</div>")
+    a("<div class='card issue'>")
+    a(f"<div class='ih'><span class='badge b-{sev}'><span class='dot d-{sev}'></span>{SEV_LABEL.get(sev, sev)} · {esc(i.get('severity_score'))}</span>"
+      f"<span class='t'>{esc(category(i))}</span>"
+      f"<span class='f'>{esc(f)}{':' + str(s) if s else ''}</span>"
+      f"<span class='chip{' st-open' if status == 'open' else ''}'>{esc(STATUS_LABEL.get(status, status))}</span></div>")
 
-    a("<div class='sec'>Issue Details</div><div class='kv'>")
+    reasons = "; ".join(r.get("reason") or r.get("kind") or "" if isinstance(r, dict) else str(r) for r in i.get("ignore_reasons") or [])
     rows = [
-        ("Kingdom", KINGDOM.get(i.get("type"), i.get("type"))),
-        ("Scan Engine", f"Aikido {dict(ENGINES).get(i.get('type'), i.get('type'))}"),
-        ("Estado", i.get("status") + (" (" + "; ".join(r.get("reason") or r.get("kind") or "" if isinstance(r, dict) else str(r) for r in i["ignore_reasons"]) + ")" if i.get("ignore_reasons") else "")),
-        ("Severity score", f"{i.get('severity_score')}/100"),
+        ("Tipo", KINGDOM.get(i.get("type"), i.get("type"))),
+        ("Escáner", f"Aikido {dict(ENGINES).get(i.get('type'), i.get('type'))}"),
         ("CWE", ", ".join(i.get("cwe_classes") or [])),
         ("Lenguaje", LANG.get(i.get("programming_language"), i.get("programming_language"))),
         ("Rama", i.get("code_repo_branch_name")),
+        ("Paquete", package_of(f)),
+        ("Función", f"{func}()" if func else None),
         ("Detectado", day(i.get("first_detected_at"))),
-        ("SLA (remediar antes de)", day(i.get("sla_remediate_by"))),
+        ("SLA", day(i.get("sla_remediate_by"))),
+        ("Motivo", reasons),
         ("Issue ID", i.get("id")),
     ]
+    a("<div class='ib'><div class='side'>")
     for k, v in rows:
         if v:
-            a(f"<b>{esc(k)}:</b> {esc(v)}<br>")
-    a("</div>")
+            a(f"<div><span>{esc(k)}</span><b>{esc(v)}</b></div>")
+    a("</div><div class='main'>")
 
-    a("<div class='sec'>Sink Details</div><div class='kv'>")
-    if func:
-        a(f"<b>Enclosing Method:</b> {esc(func)}()<br>")
-    a(f"<b>File:</b> {esc(i.get('code_repo_name'))}/{esc(f)}{':' + str(s) if s else ''}"
-      + (f" (líneas {s}-{e})" if e and s and e != s else "") + "<br></div>")
+    a("<div class='lbl'>Código afectado</div>")
     if snippet:
-        a("<div class='code'>")
+        a(f"<div class='code'><div class='hd'>{esc(i.get('code_repo_name'))}/{esc(f)}"
+          + (f" · líneas {s}-{e}" if e and s and e != s else (f" · línea {s}" if s else "")) + "</div>")
         for n, t, hl in snippet:
-            a(f"<div class='{'hl' if hl else ''}'><span class='ln'>{n}</span><span class='tx'>{esc(t) or ' '}</span></div>")
+            a(f"<div class='r{' hl' if hl else ''}'><span class='ln'>{n}</span><span class='tx'>{esc(t) or ' '}</span></div>")
         a("</div>")
-    elif opts.src_dir:
-        a("<div class='kv muted'>(archivo no encontrado en --src-dir)</div>")
+    else:
+        a(f"<p class='muted'>{esc(i.get('code_repo_name'))}/{esc(f)}{':' + str(s) if s else ''}"
+          + (" — archivo no encontrado en --src-dir" if opts.src_dir else "") + "</p>")
 
     fix = i.get("how_to_fix") or g.get("how_to_fix")
     if fix:
-        a(f"<div class='sec'>Recomendación</div><div class='desc'>{md(fix)}</div>")
-    a("</div>")
+        a(f"<div class='lbl'>Cómo corregirlo</div><div class='fix'>{md(fix)}</div>")
+    a("</div></div></div>")
 
 
 # -------------------------------------------------------------------------- main
