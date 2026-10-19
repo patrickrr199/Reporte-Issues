@@ -1,0 +1,355 @@
+<!doctype html><html lang='es'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Reporte SAST — AK-REP-BACK</title><style>
+*{box-sizing:border-box}body{font-family:Arial,Helvetica,sans-serif;color:#111;margin:0;background:#fff;font-size:13px}
+.page{max-width:1000px;margin:0 auto;padding:28px 32px}
+h1{font-size:26px;margin:0 0 4px}h2{font-size:22px;margin:34px 0 8px}
+.meta{color:#555;margin-bottom:16px;line-height:1.5}.meta b{color:#111}
+p.lead{margin:0 0 12px;line-height:1.4;font-size:14px}
+table{border-collapse:collapse;width:100%}
+.sum th{background:#0a9ad7;color:#fff;font-size:15px;text-align:left;padding:5px 8px}
+.sum th.c{text-align:center}.sum td{padding:4px 8px}
+.sum td.n{text-align:right;width:92px}.sum tr:nth-child(odd) td{background:#ececec}
+.sum tr.tot td{font-weight:bold;border-top:2px solid #0a9ad7;background:#fff}
+.h-critical{background:#e0201b!important;color:#111!important}.h-high{background:#f27a1a!important;color:#111!important}
+.h-medium{background:#f6b26b!important;color:#111!important}.h-low{background:#f1d04f!important;color:#111!important}
+.eng{margin:26px 0 10px}.eng h3{font-size:16px;text-decoration:underline;margin:0 0 6px}
+.eng th{text-align:right;padding:3px 8px}.eng th:first-child{text-align:left}
+.eng td{padding:2px 8px;text-align:right}.eng td:first-child{text-align:left;width:45%}
+.eng tr.tot td{font-weight:bold}.eng table{border-bottom:2px solid #c8d8e0}
+.issue{margin:10px 0 34px;page-break-inside:avoid}
+.bar{display:flex;gap:2px}.bar .t{flex:1;background:#0a9ad7;color:#fff;font-weight:bold;font-size:15px;padding:4px 8px}
+.bar .s{width:170px;text-align:center;font-weight:bold;font-size:15px;padding:4px 8px}
+.pkg{background:#808080;color:#fff;font-weight:bold;padding:4px 8px;margin-top:2px;font-size:14px}
+.loc{background:#c8c8c8;font-weight:bold;padding:4px 8px;margin-top:2px;font-size:14px}
+.sec{background:#d0d0d0;font-weight:bold;padding:4px 8px;margin:12px 0 6px 6px;font-size:14px;width:96%}
+.kv{padding-left:40px;line-height:1.5}
+.code{border:1px solid #ddd;margin:8px 0 0 6px;font-family:Consolas,"Courier New",monospace;font-size:12px}
+.code div{display:flex;white-space:pre-wrap}.code .ln{width:40px;flex:none;background:#eee;font-weight:bold;padding:2px 6px}
+.code .tx{padding:2px 6px;flex:1;background:#f6f6f6}.code .hl .tx{background:#fff3c4}
+.desc{padding-left:40px;line-height:1.45}pre.fix{background:#f5f5f5;border:1px solid #ddd;padding:6px;white-space:pre-wrap}
+code{background:#f0f0f0;padding:0 3px}.muted{color:#777}
+@media print{.page{padding:0;max-width:none}h2.brk{page-break-before:always}}
+</style></head><body><div class='page'>
+<h1>Reporte SAST — AK-REP-BACK</h1>
+<div class='meta'>Repositorio: <b>AK-REP-BACK</b> (id 3030745) · Motor: <b>Aikido SAST</b> · Generado: <b>2026-10-19 11:13</b><br>Issues: <b>10</b> — closed: <b>1</b>, ignored: <b>2</b>, open: <b>7</b></div>
+<h2>Desglose de issues por categoría Aikido</h2>
+<p class='lead'>La siguiente tabla resume todos los issues agrupados verticalmente por categoría (regla de Aikido). Para cada categoría se muestra el número de issues por severidad Aikido, incluyendo cuántos están auditados (cerrados, ignorados o pospuestos en Aikido).</p>
+<table class='sum'><tr><th rowspan='2'>Categoría</th><th class='c' colspan='4'>Severidad Aikido (auditados/total)</th><th class='c' rowspan='2'>Total<br>Issues</th></tr><tr>
+<th class='c h-critical'>Critical</th><th class='c h-high'>High</th><th class='c h-medium'>Medium</th><th class='c h-low'>Low</th></tr>
+<tr><td>GitHub Action actions/checkout persist Git credentials in workflow</td><td class='n'>0</td><td class='n'>0</td><td class='n'>0</td><td class='n'>0 / 1</td><td class='n'>0 / 1</td></tr>
+<tr><td>JWT signature is not verified or uses unsafe algorithm</td><td class='n'>0</td><td class='n'>0 / 1</td><td class='n'>0</td><td class='n'>0</td><td class='n'>0 / 1</td></tr>
+<tr><td>Potential file inclusion attack via reading file</td><td class='n'>0</td><td class='n'>0</td><td class='n'>0</td><td class='n'>1 / 1</td><td class='n'>1 / 1</td></tr>
+<tr><td>Potential SQL injection via string-based query concatenation</td><td class='n'>1 / 5</td><td class='n'>0</td><td class='n'>0</td><td class='n'>0</td><td class='n'>1 / 5</td></tr>
+<tr><td>Potential user input in HTTP request may allow SSRF attack</td><td class='n'>0</td><td class='n'>0</td><td class='n'>0 / 1</td><td class='n'>0</td><td class='n'>0 / 1</td></tr>
+<tr><td>Unsafe yaml load can lead to remote code execution</td><td class='n'>0</td><td class='n'>0</td><td class='n'>0</td><td class='n'>1 / 1</td><td class='n'>1 / 1</td></tr>
+<tr class='tot'><td>Total</td><td class='n'>1 / 5</td><td class='n'>0 / 1</td><td class='n'>0 / 1</td><td class='n'>2 / 3</td><td class='n'>3 / 10</td></tr></table>
+<h2 class='brk'>Detalle de issues</h2>
+<div class='eng'><h3>Engine Breakdown</h3><table><tr><th></th><th>SAST</th><th>IaC</th><th>Secrets</th><th>SCA</th><th>Total</th></tr>
+<tr><td>GitHub Action actions/checkout persist Git credentials in workflow</td><td>1</td><td>0</td><td>0</td><td>0</td><td>1</td></tr><tr class='tot'><td>Total</td><td>1</td><td>0</td><td>0</td><td>0</td><td>1</td></tr></table></div>
+<div class='issue'>
+<div class='bar'><div class='t'>GitHub Action actions/checkout persist Git credentials in workflow</div><div class='s h-low'>Low</div></div>
+<div class='pkg'>Package: .github.workflows</div>
+<div class='loc'>AK-REP-BACK/.github/workflows/release-gate.yml, line 41 (GitHub Action actions/checkout persist Git credentials in workflow)</div>
+<div class='sec'>Issue Details</div><div class='kv'>
+<b>Kingdom:</b> Security Features (código propio)<br>
+<b>Scan Engine:</b> Aikido SAST<br>
+<b>Estado:</b> open<br>
+<b>Severity score:</b> 30/100<br>
+<b>CWE:</b> CWE-522, CWE-200<br>
+<b>Lenguaje:</b> GitHub Actions<br>
+<b>Rama:</b> main<br>
+<b>Detectado:</b> 2026-09-16<br>
+<b>SLA (remediar antes de):</b> 2026-12-30<br>
+<b>Issue ID:</b> 694017003<br>
+</div>
+<div class='sec'>Sink Details</div><div class='kv'>
+<b>File:</b> AK-REP-BACK/.github/workflows/release-gate.yml:41<br></div>
+<div class='code'>
+<div class=''><span class='ln'>38</span><span class='tx'>  container-gate:</span></div>
+<div class=''><span class='ln'>39</span><span class='tx'>    runs-on: ubuntu-latest</span></div>
+<div class=''><span class='ln'>40</span><span class='tx'>    steps:</span></div>
+<div class='hl'><span class='ln'>41</span><span class='tx'>      - uses: actions/checkout@v4</span></div>
+<div class=''><span class='ln'>42</span><span class='tx'> </span></div>
+<div class=''><span class='ln'>43</span><span class='tx'>      - name: Verificar token</span></div>
+<div class=''><span class='ln'>44</span><span class='tx'>        env:</span></div>
+</div>
+<div class='sec'>Recomendación</div><div class='desc'>Explicitly set <code>persist-credentials: false</code> on actions/checkout steps that do not need to push commits back to the repository, rather than relying on the unsafe default. If the workflow does perform an authenticated git push, explicitly set <code>persist-credentials: true</code> so the intent is documented and this step won&#x27;t be re-flagged.<br></div>
+</div>
+<div class='eng'><h3>Engine Breakdown</h3><table><tr><th></th><th>SAST</th><th>IaC</th><th>Secrets</th><th>SCA</th><th>Total</th></tr>
+<tr><td>JWT signature is not verified or uses unsafe algorithm</td><td>1</td><td>0</td><td>0</td><td>0</td><td>1</td></tr><tr class='tot'><td>Total</td><td>1</td><td>0</td><td>0</td><td>0</td><td>1</td></tr></table></div>
+<div class='issue'>
+<div class='bar'><div class='t'>JWT signature is not verified or uses unsafe algorithm</div><div class='s h-high'>High</div></div>
+<div class='pkg'>Package: (raíz)</div>
+<div class='loc'>AK-REP-BACK/auth.py, line 20 (JWT signature is not verified or uses unsafe algorithm)</div>
+<div class='sec'>Issue Details</div><div class='kv'>
+<b>Kingdom:</b> Security Features (código propio)<br>
+<b>Scan Engine:</b> Aikido SAST<br>
+<b>Estado:</b> open<br>
+<b>Severity score:</b> 87/100<br>
+<b>Lenguaje:</b> Python<br>
+<b>Rama:</b> main<br>
+<b>Detectado:</b> 2026-09-08<br>
+<b>SLA (remediar antes de):</b> 2026-10-11<br>
+<b>Issue ID:</b> 652022781<br>
+</div>
+<div class='sec'>Sink Details</div><div class='kv'>
+<b>Enclosing Method:</b> decode_token()<br>
+<b>File:</b> AK-REP-BACK/auth.py:20<br></div>
+<div class='code'>
+<div class=''><span class='ln'>17</span><span class='tx'># be accepted as-is, including tokens signed with &quot;alg&quot;: &quot;none&quot;.</span></div>
+<div class=''><span class='ln'>18</span><span class='tx'>def decode_token(token: str) -&gt; dict:</span></div>
+<div class=''><span class='ln'>19</span><span class='tx'>    try:</span></div>
+<div class='hl'><span class='ln'>20</span><span class='tx'>        return jwt.decode(token, options={&quot;verify_signature&quot;: False})</span></div>
+<div class=''><span class='ln'>21</span><span class='tx'>    except Exception:</span></div>
+<div class=''><span class='ln'>22</span><span class='tx'>        return {}</span></div>
+</div>
+<div class='sec'>Recomendación</div><div class='desc'>Ensure <code>verify_signature</code> is set to True (default is True), and ensure you do not use the &#x27;none&#x27; algorithm (which requests the library to not verify the signature at all).<br></div>
+</div>
+<div class='eng'><h3>Engine Breakdown</h3><table><tr><th></th><th>SAST</th><th>IaC</th><th>Secrets</th><th>SCA</th><th>Total</th></tr>
+<tr><td>Potential file inclusion attack via reading file</td><td>1</td><td>0</td><td>0</td><td>0</td><td>1</td></tr><tr class='tot'><td>Total</td><td>1</td><td>0</td><td>0</td><td>0</td><td>1</td></tr></table></div>
+<div class='issue'>
+<div class='bar'><div class='t'>Potential file inclusion attack via reading file</div><div class='s h-low'>Low</div></div>
+<div class='pkg'>Package: (raíz)</div>
+<div class='loc'>AK-REP-BACK/routes_utils.py, line 27 (Potential file inclusion attack via reading file)</div>
+<div class='sec'>Issue Details</div><div class='kv'>
+<b>Kingdom:</b> Security Features (código propio)<br>
+<b>Scan Engine:</b> Aikido SAST<br>
+<b>Estado:</b> ignored (AI assessed SAST finding to be false positive)<br>
+<b>Severity score:</b> 1/100<br>
+<b>CWE:</b> CWE-23<br>
+<b>Lenguaje:</b> Python<br>
+<b>Rama:</b> main<br>
+<b>Detectado:</b> 2026-09-08<br>
+<b>SLA (remediar antes de):</b> 2026-12-17<br>
+<b>Issue ID:</b> 652022790<br>
+</div>
+<div class='sec'>Sink Details</div><div class='kv'>
+<b>Enclosing Method:</b> build_validated_url()<br>
+<b>File:</b> AK-REP-BACK/routes_utils.py:27<br></div>
+<div class='code'>
+<div class=''><span class='ln'>24</span><span class='tx'>            raise ValueError(&quot;Invalid protocol&quot;)</span></div>
+<div class=''><span class='ln'>25</span><span class='tx'>        if not parsed.hostname:</span></div>
+<div class=''><span class='ln'>26</span><span class='tx'>            raise ValueError(&quot;Invalid host&quot;)</span></div>
+<div class='hl'><span class='ln'>27</span><span class='tx'>        allowed_domains = [&quot;example.com&quot;]  # add your allowed domains here</span></div>
+<div class=''><span class='ln'>28</span><span class='tx'>        if parsed.hostname.lower() not in allowed_domains:</span></div>
+<div class=''><span class='ln'>29</span><span class='tx'>            raise ValueError(&quot;Invalid host&quot;)</span></div>
+<div class=''><span class='ln'>30</span><span class='tx'> </span></div>
+</div>
+<div class='sec'>Recomendación</div><div class='desc'>Ignore this issue only after you&#x27;ve verified or sanitized the input going into this function.  <br></div>
+</div>
+<div class='eng'><h3>Engine Breakdown</h3><table><tr><th></th><th>SAST</th><th>IaC</th><th>Secrets</th><th>SCA</th><th>Total</th></tr>
+<tr><td>Potential SQL injection via string-based query concatenation</td><td>5</td><td>0</td><td>0</td><td>0</td><td>5</td></tr><tr class='tot'><td>Total</td><td>5</td><td>0</td><td>0</td><td>0</td><td>5</td></tr></table></div>
+<div class='issue'>
+<div class='bar'><div class='t'>Potential SQL injection via string-based query concatenation</div><div class='s h-critical'>Critical</div></div>
+<div class='pkg'>Package: (raíz)</div>
+<div class='loc'>AK-REP-BACK/routes_admin.py, line 30 (Potential SQL injection via string-based query concatenation)</div>
+<div class='sec'>Issue Details</div><div class='kv'>
+<b>Kingdom:</b> Security Features (código propio)<br>
+<b>Scan Engine:</b> Aikido SAST<br>
+<b>Estado:</b> closed<br>
+<b>Severity score:</b> 95/100<br>
+<b>CWE:</b> CWE-89<br>
+<b>Lenguaje:</b> Python<br>
+<b>Rama:</b> main<br>
+<b>Detectado:</b> 2026-09-08<br>
+<b>SLA (remediar antes de):</b> 2026-09-13<br>
+<b>Issue ID:</b> 652022782<br>
+</div>
+<div class='sec'>Sink Details</div><div class='kv'>
+<b>Enclosing Method:</b> list_orders()<br>
+<b>File:</b> AK-REP-BACK/routes_admin.py:30<br></div>
+<div class='code'>
+<div class=''><span class='ln'>27</span><span class='tx'>    cur = conn.cursor()</span></div>
+<div class=''><span class='ln'>28</span><span class='tx'>    query = &quot;SELECT id, buyer_id, product_id, quantity, status, created_at FROM orders&quot;</span></div>
+<div class=''><span class='ln'>29</span><span class='tx'>    if status:</span></div>
+<div class='hl'><span class='ln'>30</span><span class='tx'>        query += &quot; WHERE status = %s&quot;</span></div>
+<div class=''><span class='ln'>31</span><span class='tx'>        cur.execute(query, (status,))</span></div>
+<div class=''><span class='ln'>32</span><span class='tx'>    else:</span></div>
+<div class=''><span class='ln'>33</span><span class='tx'>        cur.execute(query)</span></div>
+</div>
+<div class='sec'>Recomendación</div><div class='desc'>If possible, rebuild the query to use prepared statements or an ORM. If that is not possible, make sure the user input is verified or sanitized. As an added layer of protection, we also recommend installing a WAF that blocks SQL injection attacks.<br></div>
+</div>
+<div class='issue'>
+<div class='bar'><div class='t'>Potential SQL injection via string-based query concatenation</div><div class='s h-critical'>Critical</div></div>
+<div class='pkg'>Package: (raíz)</div>
+<div class='loc'>AK-REP-BACK/routes_auth.py, line 18 (Potential SQL injection via string-based query concatenation)</div>
+<div class='sec'>Issue Details</div><div class='kv'>
+<b>Kingdom:</b> Security Features (código propio)<br>
+<b>Scan Engine:</b> Aikido SAST<br>
+<b>Estado:</b> open<br>
+<b>Severity score:</b> 95/100<br>
+<b>CWE:</b> CWE-89<br>
+<b>Lenguaje:</b> Python<br>
+<b>Rama:</b> main<br>
+<b>Detectado:</b> 2026-09-08<br>
+<b>SLA (remediar antes de):</b> 2026-09-20<br>
+<b>Issue ID:</b> 652022783<br>
+</div>
+<div class='sec'>Sink Details</div><div class='kv'>
+<b>Enclosing Method:</b> register()<br>
+<b>File:</b> AK-REP-BACK/routes_auth.py:18<br></div>
+<div class='code'>
+<div class=''><span class='ln'>15</span><span class='tx'>    conn = get_connection()</span></div>
+<div class=''><span class='ln'>16</span><span class='tx'>    cur = conn.cursor()</span></div>
+<div class=''><span class='ln'>17</span><span class='tx'>    # VULN: sql-injection — user input concatenated directly into the query</span></div>
+<div class='hl'><span class='ln'>18</span><span class='tx'>    query = f&quot;INSERT INTO users (email, password, role) VALUES (&#x27;{email}&#x27;, &#x27;{password}&#x27;, &#x27;customer&#x27;) RETURNING id&quot;</span></div>
+<div class=''><span class='ln'>19</span><span class='tx'>    cur.execute(query)</span></div>
+<div class=''><span class='ln'>20</span><span class='tx'>    user_id = cur.fetchone()[0]</span></div>
+<div class=''><span class='ln'>21</span><span class='tx'>    conn.commit()</span></div>
+</div>
+<div class='sec'>Recomendación</div><div class='desc'>If possible, rebuild the query to use prepared statements or an ORM. If that is not possible, make sure the user input is verified or sanitized. As an added layer of protection, we also recommend installing a WAF that blocks SQL injection attacks.<br></div>
+</div>
+<div class='issue'>
+<div class='bar'><div class='t'>Potential SQL injection via string-based query concatenation</div><div class='s h-critical'>Critical</div></div>
+<div class='pkg'>Package: (raíz)</div>
+<div class='loc'>AK-REP-BACK/routes_auth.py, line 37 (Potential SQL injection via string-based query concatenation)</div>
+<div class='sec'>Issue Details</div><div class='kv'>
+<b>Kingdom:</b> Security Features (código propio)<br>
+<b>Scan Engine:</b> Aikido SAST<br>
+<b>Estado:</b> open<br>
+<b>Severity score:</b> 95/100<br>
+<b>CWE:</b> CWE-89<br>
+<b>Lenguaje:</b> Python<br>
+<b>Rama:</b> main<br>
+<b>Detectado:</b> 2026-09-08<br>
+<b>SLA (remediar antes de):</b> 2026-09-20<br>
+<b>Issue ID:</b> 652022784<br>
+</div>
+<div class='sec'>Sink Details</div><div class='kv'>
+<b>Enclosing Method:</b> login()<br>
+<b>File:</b> AK-REP-BACK/routes_auth.py:37<br></div>
+<div class='code'>
+<div class=''><span class='ln'>34</span><span class='tx'>    cur = conn.cursor()</span></div>
+<div class=''><span class='ln'>35</span><span class='tx'>    # VULN: sql-injection — classic auth-bypassable query built with an f-string,</span></div>
+<div class=''><span class='ln'>36</span><span class='tx'>    # e.g. email = &quot;admin@example.com&#x27; -- &quot; bypasses the password check entirely.</span></div>
+<div class='hl'><span class='ln'>37</span><span class='tx'>    query = f&quot;SELECT id, email, role FROM users WHERE email=&#x27;{email}&#x27; AND password=&#x27;{password}&#x27;&quot;</span></div>
+<div class=''><span class='ln'>38</span><span class='tx'>    cur.execute(query)</span></div>
+<div class=''><span class='ln'>39</span><span class='tx'>    row = cur.fetchone()</span></div>
+<div class=''><span class='ln'>40</span><span class='tx'>    cur.close()</span></div>
+</div>
+<div class='sec'>Recomendación</div><div class='desc'>If possible, rebuild the query to use prepared statements or an ORM. If that is not possible, make sure the user input is verified or sanitized. As an added layer of protection, we also recommend installing a WAF that blocks SQL injection attacks.<br></div>
+</div>
+<div class='issue'>
+<div class='bar'><div class='t'>Potential SQL injection via string-based query concatenation</div><div class='s h-critical'>Critical</div></div>
+<div class='pkg'>Package: (raíz)</div>
+<div class='loc'>AK-REP-BACK/routes_products.py, line 14 (Potential SQL injection via string-based query concatenation)</div>
+<div class='sec'>Issue Details</div><div class='kv'>
+<b>Kingdom:</b> Security Features (código propio)<br>
+<b>Scan Engine:</b> Aikido SAST<br>
+<b>Estado:</b> open<br>
+<b>Severity score:</b> 95/100<br>
+<b>CWE:</b> CWE-89<br>
+<b>Lenguaje:</b> Python<br>
+<b>Rama:</b> main<br>
+<b>Detectado:</b> 2026-09-08<br>
+<b>SLA (remediar antes de):</b> 2026-09-20<br>
+<b>Issue ID:</b> 652022785<br>
+</div>
+<div class='sec'>Sink Details</div><div class='kv'>
+<b>Enclosing Method:</b> list_products()<br>
+<b>File:</b> AK-REP-BACK/routes_products.py:14<br></div>
+<div class='code'>
+<div class=''><span class='ln'>11</span><span class='tx'>    cur = conn.cursor()</span></div>
+<div class=''><span class='ln'>12</span><span class='tx'>    # VULN: sql-injection — search term concatenated straight into a LIKE clause,</span></div>
+<div class=''><span class='ln'>13</span><span class='tx'>    # e.g. q = &quot;&#x27; UNION SELECT email,password,... FROM users -- &quot; leaks user data.</span></div>
+<div class='hl'><span class='ln'>14</span><span class='tx'>    query = f&quot;SELECT id, title, description, price, stock, seller_id FROM products WHERE title LIKE &#x27;%{q}%&#x27;&quot;</span></div>
+<div class=''><span class='ln'>15</span><span class='tx'>    cur.execute(query)</span></div>
+<div class=''><span class='ln'>16</span><span class='tx'>    rows = cur.fetchall()</span></div>
+<div class=''><span class='ln'>17</span><span class='tx'>    cur.close()</span></div>
+</div>
+<div class='sec'>Recomendación</div><div class='desc'>If possible, rebuild the query to use prepared statements or an ORM. If that is not possible, make sure the user input is verified or sanitized. As an added layer of protection, we also recommend installing a WAF that blocks SQL injection attacks.<br></div>
+</div>
+<div class='issue'>
+<div class='bar'><div class='t'>Potential SQL injection via string-based query concatenation</div><div class='s h-critical'>Critical</div></div>
+<div class='pkg'>Package: (raíz)</div>
+<div class='loc'>AK-REP-BACK/routes_products.py, line 62 (Potential SQL injection via string-based query concatenation)</div>
+<div class='sec'>Issue Details</div><div class='kv'>
+<b>Kingdom:</b> Security Features (código propio)<br>
+<b>Scan Engine:</b> Aikido SAST<br>
+<b>Estado:</b> open<br>
+<b>Severity score:</b> 95/100<br>
+<b>CWE:</b> CWE-89<br>
+<b>Lenguaje:</b> Python<br>
+<b>Rama:</b> main<br>
+<b>Detectado:</b> 2026-09-08<br>
+<b>SLA (remediar antes de):</b> 2026-09-20<br>
+<b>Issue ID:</b> 652022787<br>
+</div>
+<div class='sec'>Sink Details</div><div class='kv'>
+<b>Enclosing Method:</b> add_comment()<br>
+<b>File:</b> AK-REP-BACK/routes_products.py:62<br></div>
+<div class='code'>
+<div class=''><span class='ln'>59</span><span class='tx'>    # VULN: sql-injection — comment body concatenated directly into the INSERT,</span></div>
+<div class=''><span class='ln'>60</span><span class='tx'>    # which also doubles as a stored-XSS injection point since it is later</span></div>
+<div class=''><span class='ln'>61</span><span class='tx'>    # rendered unsanitized on the frontend.</span></div>
+<div class='hl'><span class='ln'>62</span><span class='tx'>    query = f&quot;INSERT INTO comments (product_id, author_id, body) VALUES ({product_id}, {author_id}, &#x27;{text}&#x27;) RETURNING id&quot;</span></div>
+<div class=''><span class='ln'>63</span><span class='tx'>    cur.execute(query)</span></div>
+<div class=''><span class='ln'>64</span><span class='tx'>    comment_id = cur.fetchone()[0]</span></div>
+<div class=''><span class='ln'>65</span><span class='tx'>    conn.commit()</span></div>
+</div>
+<div class='sec'>Recomendación</div><div class='desc'>If possible, rebuild the query to use prepared statements or an ORM. If that is not possible, make sure the user input is verified or sanitized. As an added layer of protection, we also recommend installing a WAF that blocks SQL injection attacks.<br></div>
+</div>
+<div class='eng'><h3>Engine Breakdown</h3><table><tr><th></th><th>SAST</th><th>IaC</th><th>Secrets</th><th>SCA</th><th>Total</th></tr>
+<tr><td>Potential user input in HTTP request may allow SSRF attack</td><td>1</td><td>0</td><td>0</td><td>0</td><td>1</td></tr><tr class='tot'><td>Total</td><td>1</td><td>0</td><td>0</td><td>0</td><td>1</td></tr></table></div>
+<div class='issue'>
+<div class='bar'><div class='t'>Potential user input in HTTP request may allow SSRF attack</div><div class='s h-medium'>Medium</div></div>
+<div class='pkg'>Package: (raíz)</div>
+<div class='loc'>AK-REP-BACK/routes_utils.py, line 18 (Potential user input in HTTP request may allow SSRF attack)</div>
+<div class='sec'>Issue Details</div><div class='kv'>
+<b>Kingdom:</b> Security Features (código propio)<br>
+<b>Scan Engine:</b> Aikido SAST<br>
+<b>Estado:</b> open<br>
+<b>Severity score:</b> 65/100<br>
+<b>CWE:</b> CWE-918<br>
+<b>Lenguaje:</b> Python<br>
+<b>Rama:</b> main<br>
+<b>Detectado:</b> 2026-09-08<br>
+<b>SLA (remediar antes de):</b> 2026-11-20<br>
+<b>Issue ID:</b> 652022788<br>
+</div>
+<div class='sec'>Sink Details</div><div class='kv'>
+<b>Enclosing Method:</b> build_validated_url()<br>
+<b>File:</b> AK-REP-BACK/routes_utils.py:18<br></div>
+<div class='code'>
+<div class=''><span class='ln'>15</span><span class='tx'>    try:</span></div>
+<div class=''><span class='ln'>16</span><span class='tx'>        # Minimal path validation</span></div>
+<div class=''><span class='ln'>17</span><span class='tx'>        if &quot;/../&quot; in base_url or re.search(r&quot;/%2e%2e/&quot;, base_url, re.IGNORECASE):</span></div>
+<div class='hl'><span class='ln'>18</span><span class='tx'>            raise ValueError(&quot;Invalid path&quot;)</span></div>
+<div class=''><span class='ln'>19</span><span class='tx'> </span></div>
+<div class=''><span class='ln'>20</span><span class='tx'>        parsed = urlparse(base_url)</span></div>
+<div class=''><span class='ln'>21</span><span class='tx'> </span></div>
+</div>
+<div class='sec'>Recomendación</div><div class='desc'>If possible, only allow requests to allowlisted domains. Otherwise, mitigate the risk by disabling redirects, blocking requests to private IP addresses, and ensuring private services require internal authentication. If data returned by the request is sent back to the user, validate it first to ensure only expected and trusted content is returned.<br></div>
+</div>
+<div class='eng'><h3>Engine Breakdown</h3><table><tr><th></th><th>SAST</th><th>IaC</th><th>Secrets</th><th>SCA</th><th>Total</th></tr>
+<tr><td>Unsafe yaml load can lead to remote code execution</td><td>1</td><td>0</td><td>0</td><td>0</td><td>1</td></tr><tr class='tot'><td>Total</td><td>1</td><td>0</td><td>0</td><td>0</td><td>1</td></tr></table></div>
+<div class='issue'>
+<div class='bar'><div class='t'>Unsafe yaml load can lead to remote code execution</div><div class='s h-low'>Low</div></div>
+<div class='pkg'>Package: (raíz)</div>
+<div class='loc'>AK-REP-BACK/routes_utils.py, line 37 (Unsafe yaml load can lead to remote code execution)</div>
+<div class='sec'>Issue Details</div><div class='kv'>
+<b>Kingdom:</b> Security Features (código propio)<br>
+<b>Scan Engine:</b> Aikido SAST<br>
+<b>Estado:</b> ignored (AI assessed SAST finding to be false positive)<br>
+<b>Severity score:</b> 1/100<br>
+<b>CWE:</b> CWE-20<br>
+<b>Lenguaje:</b> Python<br>
+<b>Rama:</b> main<br>
+<b>Detectado:</b> 2026-09-08<br>
+<b>SLA (remediar antes de):</b> 2026-12-17<br>
+<b>Issue ID:</b> 652022791<br>
+</div>
+<div class='sec'>Sink Details</div><div class='kv'>
+<b>Enclosing Method:</b> build_validated_url()<br>
+<b>File:</b> AK-REP-BACK/routes_utils.py:37<br></div>
+<div class='code'>
+<div class=''><span class='ln'>34</span><span class='tx'> </span></div>
+<div class=''><span class='ln'>35</span><span class='tx'> </span></div>
+<div class=''><span class='ln'>36</span><span class='tx'># VULN: ssrf — fetches any attacker-supplied URL server-side (including</span></div>
+<div class='hl'><span class='ln'>37</span><span class='tx'># internal/metad    ata endpoints like http://169.254.169.254/...) and echoes the</span></div>
+<div class=''><span class='ln'>38</span><span class='tx'># response back to the caller.</span></div>
+<div class=''><span class='ln'>39</span><span class='tx'>@router.get(&quot;/proxy&quot;)</span></div>
+<div class=''><span class='ln'>40</span><span class='tx'>def proxy(url: str):</span></div>
+</div>
+</div>
+<p class='muted' style='margin-top:40px'>Generado con aikido_sast_report.py a partir de la API pública de Aikido Security.</p>
+</div></body></html>
