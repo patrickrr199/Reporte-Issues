@@ -142,44 +142,98 @@ En Windows, los scripts también leen estas variables guardadas, incluso desde v
 
 ## 4. Opciones de cada script
 
+Puedes ver todas las opciones de un script con `--help`, por ejemplo `python aikido_sast_report.py --help`.
+
 ### Comunes a los tres
 
-| Opción | Descripción |
-|---|---|
-| `-o`, `--output` | Archivo HTML de salida |
-| `--json-out` | Guarda también los datos crudos que devolvió la API (sirve como evidencia) |
-| `--from-json` | Regenera el HTML desde un JSON guardado con `--json-out`, **sin llamar a la API** ni necesitar credenciales |
-| `--status` | Filtra por estado: `all`, `open`, `ignored`, `snoozed`, `closed` |
-| `--region` | `eu`, `us`, `au`, `me` (también por la variable `AIKIDO_REGION`) |
-| `--title` | Título personalizado del reporte |
+| Opción | Descripción | Ejemplo |
+|---|---|---|
+| `-o`, `--output` | Archivo HTML de salida. Si no se indica: `reporte_sast_<repo>.html`, `reporte_sca_<repo>.html` o `reporte_dast_<id>.html` | `-o reporte_sast_3030745.html` |
+| `--json-out` | Guarda también los datos crudos que devolvió la API (sirve como evidencia) | `--json-out datos_sast_3030745.json` |
+| `--from-json` | Regenera el HTML desde un JSON guardado con `--json-out`, **sin llamar a la API** ni necesitar credenciales | `python aikido_sast_report.py --repo-id 3030745 --from-json datos_sast_3030745.json` |
+| `--status` | Filtra los issues por estado (valores abajo) | `--status open` |
+| `--region` | Región de la cuenta Aikido (valores abajo). También se puede fijar con la variable `AIKIDO_REGION` | `--region us` |
+| `--title` | Título personalizado del reporte | `--title "Reporte SAST - Release 1.4"` |
+
+#### Valores de `--status`
+
+| Valor | Qué incluye | Ejemplo |
+|---|---|---|
+| `all` | Todos los issues, en cualquier estado (por defecto en SAST y DAST) | `--status all` |
+| `open` | Solo los abiertos, pendientes de corregir (por defecto en SCA) | `--status open` |
+| `ignored` | Los ignorados en Aikido (manualmente, por regla o por la IA como falso positivo) | `--status ignored` |
+| `snoozed` | Los pospuestos hasta una fecha | `--status snoozed` |
+| `closed` | Los ya corregidos (Aikido ya no los detecta) | `--status closed` |
+
+#### Valores de `--region`
+
+| Valor | Servidor | Ejemplo |
+|---|---|---|
+| `eu` | `https://app.aikido.dev` (por defecto) | `--region eu` |
+| `us` | `https://app.us.aikido.dev` | `--region us` |
+| `au` | `https://app.au.aikido.dev` | `--region au` |
+| `me` | `https://app.me.aikido.dev` | `--region me` |
 
 ### `aikido_sast_report.py`
 
-| Opción | Descripción |
-|---|---|
-| `--repo-id` | **Obligatorio.** ID del repositorio en Aikido |
-| `--branch` | Rama (por defecto `main`). Si no hay datos en esa rama, el script lista las ramas que sí tienen |
-| `--types` | Tipos de issue, por defecto `sast` (ej. `sast,iac`) |
-| `--status` | Por defecto `all` |
+| Opción | Descripción | Ejemplo |
+|---|---|---|
+| `--repo-id` | **Obligatorio.** ID del repositorio en Aikido | `--repo-id 3030745` |
+| `--branch` | Rama (por defecto `main`). Si no hay datos en esa rama, el script lista las ramas que sí tienen | `--branch develop` |
+| `--types` | Tipos de issue separados por coma (por defecto `sast`; valores abajo) | `--types sast,iac` |
+| `--status` | Por defecto `all` | `--status open` |
+
+#### Valores útiles de `--types` (SAST)
+
+| Valor | Qué es | Ejemplo |
+|---|---|---|
+| `sast` | Vulnerabilidades en el código propio (por defecto) | `--types sast` |
+| `iac` | Infraestructura como código (Dockerfile, Terraform, Kubernetes...) | `--types iac` |
+| `leaked_secret` | Secretos expuestos en el código (contraseñas, API keys) | `--types leaked_secret` |
+| `eol` | Runtimes o componentes fuera de soporte | `--types eol` |
+| `sast,iac,leaked_secret` | Varios tipos en un mismo reporte | `--types sast,iac,leaked_secret` |
+
+Ejemplo completo:
+
+```powershell
+python aikido_sast_report.py --repo-id 3030745 --branch main --status open --types sast,iac -o reporte_sast_3030745.html --json-out datos_sast_3030745.json
+```
 
 ### `aikido_sca_report.py`
 
-| Opción | Descripción |
-|---|---|
-| `--repo-id` | **Obligatorio.** ID del repositorio en Aikido |
-| `--branch` | Rama (por defecto `main`) |
-| `--status` | Por defecto `open` (igual que la vista de Aikido) |
-| `--include-container` | Incluye lo que Aikido detectó en la imagen de contenedor ligada al repo (por defecto se excluye) |
-| `--no-groups` | No consulta los grupos de issues (más rápido, sin descripción corta) |
-| `--no-detail` | Omite la sección de detalle por librería |
+| Opción | Descripción | Ejemplo |
+|---|---|---|
+| `--repo-id` | **Obligatorio.** ID del repositorio en Aikido | `--repo-id 3030745` |
+| `--branch` | Rama (por defecto `main`) | `--branch main` |
+| `--status` | Por defecto `open` (igual que la vista de Aikido) | `--status all` |
+| `--include-container` | Incluye lo que Aikido detectó en la imagen de contenedor ligada al repo (por defecto se excluye). No lleva valor | `--include-container` |
+| `--no-groups` | No consulta los grupos de issues (más rápido, sin descripción corta). No lleva valor | `--no-groups` |
+| `--no-detail` | Omite la sección de detalle por librería y deja solo las tablas. No lleva valor | `--no-detail` |
+
+Ejemplo completo:
+
+```powershell
+python aikido_sca_report.py --repo-id 3030745 --branch main --status open -o reporte_sca_3030745.html --json-out datos_sca_3030745.json
+```
 
 ### `aikido_dast_report.py`
 
-| Opción | Descripción |
-|---|---|
-| `--domain-id` / `--domain` | **Uno de los dos es obligatorio.** ID del dominio, o su nombre (con o sin `https://`). Si el nombre no existe, el script lista los dominios disponibles |
-| `--types` | Tipos de issue, por defecto `surface_monitoring` (DAST) |
-| `--status` | Por defecto `all` |
+| Opción | Descripción | Ejemplo |
+|---|---|---|
+| `--domain-id` | ID del dominio en Aikido. **Usar este o `--domain`** | `--domain-id 148109` |
+| `--domain` | Nombre del dominio, con o sin `https://`. Si no existe, el script lista los dominios disponibles | `--domain vulnlab-dast.onrender.com` |
+| `--types` | Tipos de issue, por defecto `surface_monitoring` (DAST) | `--types surface_monitoring` |
+| `--status` | Por defecto `all` | `--status open` |
+
+Ejemplos completos:
+
+```powershell
+# Por ID
+python aikido_dast_report.py --domain-id 148109 --status open -o reporte_dast_148109.html --json-out datos_dast_148109.json
+
+# Por nombre
+python aikido_dast_report.py --domain vulnlab-dast.onrender.com -o reporte_dast_vulnlab.html
+```
 
 ---
 
