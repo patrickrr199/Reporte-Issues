@@ -13,7 +13,9 @@ Autenticación (una de las dos):
   $env:AIKIDO_CLIENT_ID="..."; $env:AIKIDO_CLIENT_SECRET="..."  el script pide el token
 
 Ejemplo:
-  python aikido_sast_report.py --repo-id 3030745 --src-dir "..\\aikido-backend-demo" -o reporte_AK-REP-BACK.html
+  python aikido_sast_report.py --repo-id 3030745 -o reporte_AK-REP-BACK.html
+
+Todo el contenido sale de la API de Aikido: no lee el código fuente del repositorio.
 
 Solo librería estándar de Python 3.8+.
 """
@@ -67,7 +69,7 @@ class Aikido:
                     continue
                 body = e.read().decode("utf-8", "replace")[:400]
                 if e.code == 401:
-                    raise SystemExit("401 No autorizado: el token expiró o es inválido (los tokens de Aikido duran 1 hora).\n" + body)
+                    raise SystemExit("401 No autorizado: credenciales inválidas (client id/secret) o token vencido (dura 1 hora).\n" + body)
                 raise SystemExit(f"HTTP {e.code} en {req.full_url}\n{body}")
             except (urllib.error.URLError, ConnectionError, TimeoutError) as e:
                 if attempt == retries:
@@ -119,13 +121,24 @@ class Aikido:
         return self._call(req)
 
 
-def fetch(cli, repo_id, types, status):
+def in_scope(issues, repo_id, types, branch):
+    """Solo issues del repo pedido, de los tipos pedidos y de la rama pedida (lo comprueba el script, no solo la API)."""
+    sel = [i for i in issues if i.get("code_repo_id") == repo_id and i.get("type") in types]
+    kept = [i for i in sel if i.get("code_repo_branch_name") == branch]
+    if sel and not kept:
+        found = Counter(i.get("code_repo_branch_name") for i in sel)
+        raise SystemExit(f"No hay issues en la rama '{branch}' del repo {repo_id}. "
+                         f"Ramas encontradas: {', '.join(f'{b} ({n})' for b, n in found.items())}")
+    return kept
+
+
+def fetch(cli, repo_id, types, status, branch):
     params = {"format": "json", "filter_code_repo_id": repo_id}
     if status != "all":
         params["filter_status"] = status
     log(f"Exportando issues del repo {repo_id} ...")
-    issues = [i for i in cli.get("/issues/export", params) if i.get("type") in types]
-    log(f"  {len(issues)} issues de tipo {', '.join(types)}")
+    issues = in_scope(cli.get("/issues/export", params) or [], repo_id, types, branch)
+    log(f"  {len(issues)} issues de tipo {', '.join(types)} en la rama '{branch}'")
     groups = {}
     for n, i in enumerate(issues, 1):
         log(f"  detalle {n}/{len(issues)}", end="\r")
@@ -142,6 +155,36 @@ def fetch(cli, repo_id, types, status):
 
 def log(msg, end="\n"):
     print(msg, file=sys.stderr, end=end, flush=True)
+
+
+def env(name):
+    """Variable de entorno; en Windows también las guardadas en el usuario (setx), aunque la terminal sea anterior."""
+    value = os.getenv(name)
+    if not value and sys.platform == "win32":
+        try:
+            import winreg
+            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, "Environment") as k:
+                value = winreg.QueryValueEx(k, name)[0]
+        except OSError:
+            value = None
+    return (value or "").strip() or None
+
+
+def client_from_env(region):
+    """Crea el cliente con AIKIDO_CLIENT_ID + AIKIDO_CLIENT_SECRET (preferido: el token se renueva solo) o AIKIDO_TOKEN."""
+    cid, sec, token = env("AIKIDO_CLIENT_ID"), env("AIKIDO_CLIENT_SECRET"), env("AIKIDO_TOKEN")
+    if token and token.startswith("AIK_SECRET_"):
+        log("  aviso: AIKIDO_TOKEN contiene un client secret; se ignora (el secret va en AIKIDO_CLIENT_SECRET)")
+        sec, token = sec or token, None
+    if cid and sec:
+        return Aikido(region, client_id=cid, client_secret=sec)
+    if token:
+        return Aikido(region, token=token)
+    raise SystemExit(
+        "Faltan credenciales de Aikido. Guárdalas una sola vez en tu usuario de Windows (sirven en todas las terminales):\n"
+        "  setx AIKIDO_CLIENT_ID \"AIK_CLIENT_...\"\n"
+        "  setx AIKIDO_CLIENT_SECRET \"AIK_SECRET_...\"\n"
+        f"Encontradas: AIKIDO_CLIENT_ID={'sí' if cid else 'no'}, AIKIDO_CLIENT_SECRET={'sí' if sec else 'no'}")
 
 
 # ----------------------------------------------------------------------- helpers
@@ -172,43 +215,6 @@ def is_audited(i):
 def package_of(path):
     d = os.path.dirname(path or "").replace("\\", "/").strip("/")
     return d.replace("/", ".") if d else "(raíz)"
-
-
-FUNC_RE = [
-    re.compile(r"^\s*(?:async\s+)?def\s+(\w+)\s*\("),                                   # Python
-    re.compile(r"^\s*(?:export\s+)?(?:async\s+)?function\s+(\w+)\s*\("),                # JS/TS
-    re.compile(r"^\s*(?:public|private|protected|internal)[\w<>\[\],\s]*?\s(\w+)\s*\("), # C# / Java
-]
-
-
-def read_source(src_dirs, i, ctx=3):
-    """Devuelve (líneas [(n, texto, resaltada)], método contenedor) leyendo el repo local."""
-    f, (s, e) = i.get("affected_file"), lines_of(i)
-    if not f or not s:
-        return None, None
-    for d in src_dirs:
-        path = os.path.join(d, f.lstrip("/\\"))
-        if not os.path.isfile(path):
-            continue
-        base_real = os.path.realpath(d)
-        target_real = os.path.realpath(path)
-        if os.path.commonpath([base_real, target_real]) != base_real:
-            raise Exception("Invalid file path")
-        with open(target_real, encoding="utf-8", errors="replace") as fh:
-            content = fh.read().splitlines()
-        s, e = int(s), int(e or s)
-        lo, hi = max(1, s - ctx), min(len(content), e + ctx)
-        func = None
-        for n in range(min(s, len(content)), 0, -1):
-            for rx in FUNC_RE:
-                m = rx.match(content[n - 1])
-                if m:
-                    func = m.group(1)
-                    break
-            if func:
-                break
-        return [(n, content[n - 1], s <= n <= e) for n in range(lo, hi + 1)], func
-    return None, None
 
 
 def md(text):
@@ -258,7 +264,8 @@ table{border-collapse:collapse;width:100%}
 .sum{overflow:hidden}.sum th{font-size:12px;font-weight:600;color:var(--muted);text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);background:#fafafd}
 .sum th.c,.sum td.n{text-align:center}.sum td{padding:10px 14px;border-bottom:1px solid var(--line)}
 .sum tr:last-child td{border-bottom:0}.sum tr.tot td{font-weight:700;background:#fafafd}
-.sum td.n{width:96px;color:var(--muted)}.sum td.n.has{color:var(--ink);font-weight:600}
+.sum td.n{width:96px;color:var(--muted)}.sum td.n.has{color:var(--ink);font-weight:700;font-size:15px}
+.sum td.n small{display:block;font-size:11px;font-weight:500;color:var(--muted)}.sum td.n small.op{color:var(--brand)}
 .sum a{color:inherit;text-decoration:none}.sum a:hover{color:var(--brand)}
 .badge{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:600;white-space:nowrap}
 .b-critical{background:#fde7e5;color:var(--critical)}.b-high{background:#fdeee4;color:#c4520f}
@@ -276,10 +283,9 @@ table{border-collapse:collapse;width:100%}
 .side b{font-weight:600;text-align:right}
 .main{padding:14px 16px;min-width:0}
 .lbl{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
-.code{border-radius:8px;overflow:hidden;background:#141428;color:#e6e6f0;font:12.5px/1.55 Consolas,"SFMono-Regular",monospace;margin-bottom:14px}
-.code .hd{background:#1f1f38;color:#a9a9c6;padding:6px 12px;font-size:12px}
-.code .r{display:flex;white-space:pre-wrap}.code .ln{width:44px;flex:none;text-align:right;padding:0 10px;color:#6f6f92}
-.code .tx{flex:1;padding-right:12px}.code .hl{background:rgba(242,107,29,.22)}.code .hl .ln{color:#fff;box-shadow:inset 3px 0 0 var(--high)}
+.where{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;background:#fafafd;border:1px solid var(--line);border-radius:8px;
+padding:10px 14px;margin-bottom:14px;font-size:13px}.where span{color:var(--muted)}
+.where b{font-family:Consolas,"SFMono-Regular",monospace;font-weight:600;word-break:break-all}
 .fix{background:var(--brand-soft);border-radius:8px;padding:10px 12px;font-size:13px}
 .fix pre{background:#fff;border:1px solid var(--line);border-radius:6px;padding:8px;white-space:pre-wrap}
 code{background:#ececf6;border-radius:4px;padding:0 4px;font-size:12.5px}
@@ -301,11 +307,12 @@ def render(issues, groups, opts, repo_name):
     cats = sorted(by_cat, key=lambda c: (worst(c), c.lower()))
     anchor = {c: f"cat-{n}" for n, c in enumerate(cats, 1)}
 
-    def cell(lst, sev):
-        sel = [i for i in lst if i.get("severity") == sev]
+    def cell(lst, sev=None):
+        sel = [i for i in lst if sev is None or i.get("severity") == sev]
         if not sel:
             return "<td class='n'>–</td>"
-        return f"<td class='n has'>{sum(map(is_audited, sel))} / {len(sel)}</td>"
+        op = sum(1 for i in sel if i.get("status") == "open")
+        return f"<td class='n has'>{len(sel)}<small class='{'op' if op else ''}'>{op} abierto{'s' if op != 1 else ''}</small></td>"
 
     H = []
     a = H.append
@@ -331,16 +338,17 @@ def render(issues, groups, opts, repo_name):
 
     # ---- Tabla por categoría
     a("<h2>Issues por categoría</h2>")
-    a("<p class='lead'>Cada celda muestra <b>gestionados / total</b> (gestionado = cerrado, ignorado o pospuesto en Aikido).</p>")
+    a("<p class='lead'>Cada celda muestra el <b>número total de issues</b> y, debajo, cuántos siguen <b>abiertos</b> "
+      "(el resto está cerrado, ignorado o pospuesto en Aikido).</p>")
     a("<div class='card sum'><table><tr><th>Categoría</th>"
       + "".join(f"<th class='c'><span class='badge b-{s}'>{SEV_LABEL[s]}</span></th>" for s in SEVERITIES)
       + "<th class='c'>Total</th></tr>")
     for c in cats:
         lst = by_cat[c]
         a(f"<tr><td><a href='#{anchor[c]}'>{esc(c)}</a></td>" + "".join(cell(lst, s) for s in SEVERITIES)
-          + f"<td class='n has'>{sum(map(is_audited, lst))} / {len(lst)}</td></tr>")
+          + cell(lst) + "</tr>")
     a("<tr class='tot'><td>Total</td>" + "".join(cell(issues, s) for s in SEVERITIES)
-      + f"<td class='n has'>{sum(map(is_audited, issues))} / {len(issues)}</td></tr></table></div>")
+      + cell(issues) + "</tr></table></div>")
 
     # ---- Detalle
     a("<h2>Detalle de issues</h2>")
@@ -358,6 +366,7 @@ def render(issues, groups, opts, repo_name):
     return "\n".join(H)
 
 
+REACH = {"reachable": "Sí", "not_reachable": "No", "unknown": "Desconocido"}
 STATUS_LABEL = {"open": "Abierto", "closed": "Cerrado", "ignored": "Ignorado", "snoozed": "Pospuesto"}
 
 
@@ -366,7 +375,6 @@ def render_issue(a, i, g, opts):
     f = i.get("affected_file") or ""
     s, e = lines_of(i)
     status = i.get("status") or ""
-    snippet, func = read_source(opts.src_dir, i)
     a("<div class='card issue'>")
     a(f"<div class='ih'><span class='badge b-{sev}'><span class='dot d-{sev}'></span>{SEV_LABEL.get(sev, sev)} · {esc(i.get('severity_score'))}</span>"
       f"<span class='t'>{esc(category(i))}</span>"
@@ -381,9 +389,10 @@ def render_issue(a, i, g, opts):
         ("Lenguaje", LANG.get(i.get("programming_language"), i.get("programming_language"))),
         ("Rama", i.get("code_repo_branch_name")),
         ("Paquete", package_of(f)),
-        ("Función", f"{func}()" if func else None),
         ("Detectado", day(i.get("first_detected_at"))),
         ("SLA", day(i.get("sla_remediate_by"))),
+        ("Alcanzable", REACH.get(i.get("reachability_status"))),
+        ("Tiempo estimado", f"{g['time_to_fix_minutes']} min" if g.get("time_to_fix_minutes") else None),
         ("Motivo", reasons),
         ("Issue ID", i.get("id")),
     ]
@@ -393,16 +402,14 @@ def render_issue(a, i, g, opts):
             a(f"<div><span>{esc(k)}</span><b>{esc(v)}</b></div>")
     a("</div><div class='main'>")
 
-    a("<div class='lbl'>Código afectado</div>")
-    if snippet:
-        a(f"<div class='code'><div class='hd'>{esc(i.get('code_repo_name'))}/{esc(f)}"
-          + (f" · líneas {s}-{e}" if e and s and e != s else (f" · línea {s}" if s else "")) + "</div>")
-        for n, t, hl in snippet:
-            a(f"<div class='r{' hl' if hl else ''}'><span class='ln'>{n}</span><span class='tx'>{esc(t) or ' '}</span></div>")
-        a("</div>")
-    else:
-        a(f"<p class='muted'>{esc(i.get('code_repo_name'))}/{esc(f)}{':' + str(s) if s else ''}"
-          + (" — archivo no encontrado en --src-dir" if opts.src_dir else "") + "</p>")
+    a("<div class='lbl'>Ubicación</div><div class='where'>")
+    a(f"<span>Repositorio</span><b>{esc(i.get('code_repo_name'))} (ID {esc(i.get('code_repo_id'))})</b>")
+    if i.get("code_repo_branch_name"):
+        a(f"<span>Rama</span><b>{esc(i['code_repo_branch_name'])}</b>")
+    a(f"<span>Archivo</span><b>{esc(f) or '—'}</b>")
+    if s:
+        a(f"<span>Línea{'s' if e and e != s else ''}</span><b>{s}{'-' + str(e) if e and e != s else ''}</b>")
+    a("</div>")
 
     fix = i.get("how_to_fix") or g.get("how_to_fix")
     if fix:
@@ -416,7 +423,7 @@ def main():
     ap.add_argument("--repo-id", type=int, required=True, help="ID del repositorio en Aikido (ej. 3030745)")
     ap.add_argument("--types", default="sast", help="Tipos de issue separados por coma (default: sast)")
     ap.add_argument("--status", default="all", choices=["all", "open", "ignored", "snoozed", "closed"])
-    ap.add_argument("--src-dir", action="append", default=[], help="Clon local del repo para mostrar el código (repetible)")
+    ap.add_argument("--branch", default="main", help="Rama del repositorio (default: main)")
     ap.add_argument("--region", choices=REGIONS, default=os.getenv("AIKIDO_REGION", "eu"))
     ap.add_argument("--title")
     ap.add_argument("-o", "--output")
@@ -428,14 +435,13 @@ def main():
     if opts.from_json:
         with open(opts.from_json, encoding="utf-8") as fh:
             data = json.load(fh)
-        issues, groups = data["issues"], {int(k): v for k, v in data["groups"].items()}
+        issues = in_scope(data["issues"], opts.repo_id, opts.types, opts.branch)
+        if opts.status != "all":
+            issues = [i for i in issues if i.get("status") == opts.status]
+        groups = {int(k): v for k, v in data["groups"].items()}
     else:
-        token = os.getenv("AIKIDO_TOKEN")
-        cid, sec = os.getenv("AIKIDO_CLIENT_ID"), os.getenv("AIKIDO_CLIENT_SECRET")
-        if not token and not (cid and sec):
-            raise SystemExit("Define AIKIDO_TOKEN, o AIKIDO_CLIENT_ID y AIKIDO_CLIENT_SECRET.")
-        cli = Aikido(opts.region, token, cid, sec)
-        issues, groups = fetch(cli, opts.repo_id, opts.types, opts.status)
+        cli = client_from_env(opts.region)
+        issues, groups = fetch(cli, opts.repo_id, opts.types, opts.status, opts.branch)
 
     repo_name = next((i["code_repo_name"] for i in issues if i.get("code_repo_name")), str(opts.repo_id))
     if opts.json_out:

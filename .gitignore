@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+
+# Salidas de los reportes (contienen información de vulnerabilidades)
+reporte_*.html
+datos_*.json
+aikido/
